@@ -7,4 +7,3 @@ dbUser <- 'ShinyWeb'
 dbPwd <- 'h4kcg$$Jt2Y'
 
 defaultStartDate <- '2019-12-01'
-
