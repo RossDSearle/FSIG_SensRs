@@ -80,7 +80,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
-    #RV$Authenticated <- T
+    RV$Authenticated <- T
 
     #### Login to system   #########################
     
@@ -261,13 +261,15 @@ server <- function(input, output, session) {
     
     output$downloadData <- downloadHandler(
         filename = function() {
-          colName <- getColumnNamefromIDs(input$pickStation,input$pickPlatform,input$pickDataStream)
+         # colName <- getColumnNamefromIDs(input$pickStation,input$pickPlatform,input$pickDataStream)
           tabName <- getTableNamefromIDs(input$pickStation,input$pickPlatform)
           stationName <- getStationNamefromIDs(input$pickStation)
-          paste('FSIG-', stationName, '-', tabName, '-', colName, '.csv', sep='')
+          colnames <- paste0(input$pickDataStream, collapse = "_")
+          paste('FSIG-', stationName, '-', tabName, '-', colnames, '.csv', sep='')
         },
         content = function(con) {
-          df <- data.frame(date=index(RV$currentTS), coredata(RV$currentTS))
+
+          df <- data.frame(DateTime=index(RV$currentTS), coredata(RV$currentTS),row.names=NULL)
           write.csv(df, con, row.names = F)
         }
       )
