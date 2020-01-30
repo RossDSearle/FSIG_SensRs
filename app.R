@@ -12,8 +12,20 @@ source('appFunctions.R')
 
 ui <- fluidPage(
 
-    headerPanel(fluidPage(HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; Townsville Field Support and Instrumentation Group Sensor Network"))),
+  
+  tags$head(
+    ### icon for web server version
+    #tags$link( rel="icon", type="image/png", href="layers.png", sizes="32x32" ),
+    ### icon for standalone version
+    # tags$link( rel="icon", type="image/png", href="http://localhost:1984/layers.png", sizes="32x32" ),
+    # tags$head(tags$script(src = "message-handler.js")),
+    tags$title("FSIG")
+    #HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; Townsville Field Support and Instrumentation Group Sensor Network")
+    
+  ),
+    headerPanel(HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; Townsville Field Support and Instrumentation Group Sensor Network")),
 
+   
     sidebarLayout(
         sidebarPanel(width = 3,
             wellPanel(
@@ -80,6 +92,8 @@ server <- function(input, output, session) {
         }else{
           return(F)
         }
+      }else{
+        return(F)
       }
     }
     
@@ -217,6 +231,7 @@ server <- function(input, output, session) {
                 dygraph(RV$currentTS ,  main = "")%>%
                     #dyAxis("y", label = RV$currentSiteInfo$DataType, valueRange = c(0, maxVal)) %>%
                     dyAxis("y", label = RV$currentSiteInfo$DataType) %>%
+                    dyLegend(labelsSeparateLines = T) %>%
                     dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26) %>%
                     dyRangeSelector()
             })
@@ -236,7 +251,7 @@ server <- function(input, output, session) {
       
       if(nrow(RV$currentTS) > 0){
         df <- data.frame(date=index(RV$currentTS), coredata(RV$currentTS))
-        rhandsontable(df,   manualColumnResize = T, readOnly = TRUE, rowHeaders = F, width = 450) 
+        rhandsontable(df,   manualColumnResize = T, readOnly = TRUE, rowHeaders = F, width = 1450) 
       }else{
         return(NULL)
       }
