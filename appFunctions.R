@@ -41,7 +41,7 @@ getStations <- function(){
 
 getStationsList <- function(){
   conn <- getCon()
-  d <- dbGetQuery(conn, 'SELECT stationID, lnStationName FROM LNDBStationMeta')
+  d <- dbGetQuery(conn, 'SELECT stationID, lnStationName FROM LNDBStationMeta order by lnStationName')
   dbDisconnect(conn)
   stationList<- as.list(d$stationID)
   names(stationList) <- d$lnStationName
@@ -50,7 +50,7 @@ getStationsList <- function(){
 
 getPlatformList <- function(stationID){
   conn <- getCon()
-  sql <- paste0("SELECT tableID, LNDBStationMeta_stationID, lnTableName, dbTableName FROM LNDBTableMeta where LNDBStationMeta_stationID = ", stationID)
+  sql <- paste0("SELECT tableID, LNDBStationMeta_stationID, lnTableName, dbTableName FROM LNDBTableMeta where LNDBStationMeta_stationID = ", stationID, " order by lnTableName")
 
   d <- dbGetQuery(conn, sql)
   dbDisconnect(conn)
@@ -62,7 +62,7 @@ getPlatformList <- function(stationID){
 getDataStreamList <- function(stationID, platformID){
   conn <- getCon()
   sql <- paste0("SELECT columnID, LNDBStationMeta_stationID, LNDBTableMeta_tableID, lnColumnName, dbColumnName, process, units FROM LNDBColumnMeta 
-                where LNDBStationMeta_stationID = ", stationID, ' and LNDBTableMeta_tableID = ', platformID)
+                where LNDBStationMeta_stationID = ", stationID, ' and LNDBTableMeta_tableID = ', platformID , " order by lnColumnName")
 
   d <- dbGetQuery(conn, sql)
 
@@ -75,38 +75,34 @@ getDataStreamList <- function(stationID, platformID){
 
 getDataStreamValues <- function(stationID, platformID, dataStreamID, startDate, endDate){
   conn <- getCon()
-  # # get the DB column name
-  # sql <- paste0("SELECT columnID, LNDBStationMeta_stationID, LNDBTableMeta_tableID, lnColumnName, dbColumnName, process, units FROM LNDBColumnMeta 
-  #                 where LNDBStationMeta_stationID = ", stationID, " and LNDBTableMeta_tableID = ", platformID, " and lnColumnName =  '", dataStreamID, "'")
-  # d <- dbGetQuery(conn, sql)
-  # colName <- d$dbColumnName
-  # 
-  # # get the DB table name
-  # sql <- paste0("SELECT tableID, LNDBStationMeta_stationID, lnTableName, dbTableName FROM LNDBTableMeta where LNDBStationMeta_stationID = ", stationID ,' and tableID = ',platformID)
-  # print(sql)
-  # d <- dbGetQuery(conn, sql)
-  # tabName <- d$dbTableName
-  
+
   colName <- getColumnNamefromIDs(stationID, platformID, dataStreamID)
   tabName <- getTableNamefromIDs(stationID, platformID)
   # get the timeseries
   sql <- paste0("SELECT TmStamp, ", colName, " FROM [", tabName,"] WHERE TmStamp >='", startDate, "' and TmStamp <='",endDate ,"'")
-  print(sql)
   res <- runQuery(sql)
+  dbDisconnect(conn)
   
+  print(paste0('nrows = ', nrow(res)))
+  
+  
+  if(nrow(res) != 0){
   d <- as.POSIXct(str_trim(res[,1]) , format = "%Y-%m-%d %H:%M:%S")
   ts <- xts(x=res[,2], unique = FALSE, order.by=d, tzone =  Sys.getenv("TZ"))
   names(ts) <- c(colName)
-  
-  
-  dbDisconnect(conn)
   return(ts)
+  }else{
+    return(NULL)
+  }
+  
+  #print(head(ts))
+
+ 
 }
 
 getStationNamefromIDs<- function(stationID){
   conn <- getCon()
   sql <- paste0('SELECT stationID, lnStationName FROM LNDBStationMeta where stationID = ', stationID)
-  print(sql)
   d <- dbGetQuery(conn, sql) 
   dbDisconnect(conn)
   stationName<- d$lnStationName
@@ -117,7 +113,6 @@ getStationNamefromIDs<- function(stationID){
 getTableNamefromIDs<- function(stationID, platformID){
   conn <- getCon()
   sql <- paste0("SELECT tableID, LNDBStationMeta_stationID, lnTableName, dbTableName FROM LNDBTableMeta where LNDBStationMeta_stationID = ", stationID ,' and tableID = ',platformID)
-  print(sql)
   d <- dbGetQuery(conn, sql)
   dbDisconnect(conn)
   tabName <- d$dbTableName

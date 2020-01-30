@@ -4,6 +4,8 @@ library(DBI)
 library(stringr)
 library(xts)
 library(rhandsontable)
+library(shinyWidgets)
+library(plyr)
 
 source('config.R')
 source('appFunctions.R')
@@ -19,10 +21,22 @@ ui <- fluidPage(
               fluidRow( column(1, htmlOutput("loginStatus"), HTML('<br>'))),
                 selectInput("pickStation", "Station Name", choices=NULL),
                 selectInput("pickPlatform", "Platform", choices=NULL),
-                selectInput("pickDataStream", "Data Stream", choices=NULL),
+               # selectInput("pickDataStream", "Data Stream", choices=NULL, multiple=T),
+              pickerInput(
+                inputId = "pickDataStream", 
+                label = "Data Stream/s", 
+                choices = NULL, 
+                options = list(
+                  `actions-box` = TRUE, 
+                  size = 8,
+                  `selected-text-format` = "count > 3"
+                ), 
+                multiple = TRUE
+              ),
                 dateRangeInput('dateRange',
                                label = 'Date range input: yyyy-mm-dd',
                                start = as.Date(defaultStartDate), end = Sys.Date()),
+              HTML('<br><br>'),
                 actionButton("buttonGetData", "Get Data"), HTML('<br><br>'),
                 downloadLink('downloadData', 'Download Data')
             )
@@ -32,7 +46,7 @@ ui <- fluidPage(
           tabsetPanel(
             tabPanel("Chart", 
                         htmlOutput("errMsgBox", inline = T),
-                        dygraphOutput("sensorChart1", width = "850", height = "300px")
+                        dygraphOutput("sensorChart1", width = "850", height = "500px")
             ), tabPanel("Table",
                         rHandsontableOutput("dataStreamTable"))
           )
@@ -54,7 +68,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
-    #RV$Authenticated <- T
+    RV$Authenticated <- T
 
     #### Login to system   #########################
     
@@ -128,7 +142,7 @@ server <- function(input, output, session) {
 ################  update the pick lists  ##########################    
     observe({
       req( RV$Authenticated)
-      print( RV$Authenticated)
+    
       if( RV$Authenticated){
         RV$availableStations <- getStationsList()
         updateSelectInput(session, "pickStation", choices =  RV$availableStations)
@@ -149,6 +163,8 @@ server <- function(input, output, session) {
         updateSelectInput(session, "pickDataStream",choices =  RV$availableDataStreams)
     })
     
+   
+    
     
 ################  Get the Data ####################################
     observeEvent(input$buttonGetData, {
@@ -160,9 +176,28 @@ server <- function(input, output, session) {
         stn <- input$pickStation
         platF <- input$pickPlatform 
 
-           ts <- getDataStreamValues(stn, platF, input$pickDataStream, input$dateRange[1], input$dateRange[2])
-           if(nrow(ts) > 0){
-               RV$currentTS <- ts
+
+        tss <- vector("list", length(input$pickDataStream) )
+        
+        for (i in 1:length(input$pickDataStream)) {
+          #print(i)
+          fld <- input$pickDataStream[i]
+          print(fld)
+          df <- getDataStreamValues(stn, platF, fld, input$dateRange[1], input$dateRange[2])
+          #print(str[ts])
+          tss[[i]] <- df
+
+        }
+        
+        noNulltss <- compact(tss)
+       
+        #print(head(allTs))
+
+        
+           # ts <- getDataStreamValues(stn, platF, input$pickDataStream, input$dateRange[1], input$dateRange[2])
+           if(length(noNulltss) > 0){
+             allTs <- do.call(merge, noNulltss)
+               RV$currentTS <- allTs
                RV$error <- NULL
            }else{
                RV$currentTS <- NULL
@@ -180,14 +215,15 @@ server <- function(input, output, session) {
             isolate({
                 maxVal <- max(RV$currentTS)
                 dygraph(RV$currentTS ,  main = "")%>%
-                    dyAxis("y", label = RV$currentSiteInfo$DataType, valueRange = c(0, maxVal)) %>%
+                    #dyAxis("y", label = RV$currentSiteInfo$DataType, valueRange = c(0, maxVal)) %>%
+                    dyAxis("y", label = RV$currentSiteInfo$DataType) %>%
                     dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26) %>%
                     dyRangeSelector()
             })
         }
     })
     
-    #################  Eroor message text  ###########################
+    #################  Error message text  ###########################
     output$errMsgBox <- renderText({
       paste0('<h4><span style="color: #ff0000;">', RV$error, '</span></h4>')
       
