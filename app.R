@@ -80,7 +80,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
-    RV$Authenticated <- T
+   # RV$Authenticated <- T
 
     #### Login to system   #########################
     
