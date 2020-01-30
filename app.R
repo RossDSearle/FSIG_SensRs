@@ -54,6 +54,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
+    #RV$Authenticated <- T
 
     #### Login to system   #########################
     
@@ -209,7 +210,10 @@ server <- function(input, output, session) {
     
     output$downloadData <- downloadHandler(
         filename = function() {
-          paste('data-', Sys.Date(), '.csv', sep='')
+          colName <- getColumnNamefromIDs(input$pickStation,input$pickPlatform,input$pickDataStream)
+          tabName <- getTableNamefromIDs(input$pickStation,input$pickPlatform)
+          stationName <- getStationNamefromIDs(input$pickStation)
+          paste('FSIG-', stationName, '-', tabName, '-', colName, '.csv', sep='')
         },
         content = function(con) {
           df <- data.frame(date=index(RV$currentTS), coredata(RV$currentTS))
