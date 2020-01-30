@@ -15,14 +15,15 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(width = 3,
             wellPanel(
-                
+              fluidRow( column(1, actionLink("show", "Login"))), 
+              fluidRow( column(1, htmlOutput("loginStatus"), HTML('<br>'))),
                 selectInput("pickStation", "Station Name", choices=NULL),
                 selectInput("pickPlatform", "Platform", choices=NULL),
                 selectInput("pickDataStream", "Data Stream", choices=NULL),
                 dateRangeInput('dateRange',
                                label = 'Date range input: yyyy-mm-dd',
                                start = as.Date(defaultStartDate), end = Sys.Date()),
-                actionButton("buttonGetData", "Get Data"), HTML('<br>,<br>'),
+                actionButton("buttonGetData", "Get Data"), HTML('<br><br>'),
                 downloadLink('downloadData', 'Download Data')
             )
         ),
@@ -41,19 +42,96 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
-    
+  
+  loginResult <- F 
+  
     RV <- reactiveValues()
     RV$currentTS <- NULL
     RV$availableStations <- NULL
     RV$availablePlatforms <- NULL
     RV$availableDataStreams <- NULL
     RV$error <- NULL
+    RV$Authenticated <- F
+    RV$Usr <- NULL
+ 
+
+    #### Login to system   #########################
+    
+    adsLogin <- function(usr, pwd ){
+      
+      if(usr == uiName){
+        if(pwd == uiPwd){
+          return(T)
+        }else{
+          return(F)
+        }
+      }
+    }
+    
+    
+    # Display information about selected data
+    output$loginStatus <- renderText({
+      if (!is.null(RV$Usr)){
+        paste0(RV$Usr)
+      }
+    })
+    
+    Login <- function(failed = FALSE) {
+      modalDialog(title = "FSIG Login", size = 's',
+                  textInput("usrID", "User Name", placeholder = 'Demo'),
+                  passwordInput("usrPwd", "Password", placeholder = 'Not Telling'),
+                  HTML(paste0('For Information about obtaining a login contact <a href=mailto:', adminEmail, '?Subject=SMIPS&nbsp;Access>', adminName, '</a>')), 
+                  tags$a(href=paste0("mailto:", adminEmail, "?Subject=Hello%20again", adminName)),
+                  if (failed)
+                    div(tags$b("Login failed", style = "color: red;")),
+                  
+                  footer = tagList(
+                    modalButton("Cancel"),
+                    actionButton("ok", "Login")
+                  )
+      )
+    }
+    
+    # Show modal when button is clicked.
+    observeEvent(input$show, {
+      showModal(Login())
+    })
+    
+    observeEvent(input$ok, {
+      
+      if (!is.null(input$usrID) && nzchar(input$usrID) && !is.null(input$usrPwd) && nzchar(input$usrPwd) ) {
+        
+        loginResult <- adsLogin(usr = input$usrID, pwd = input$usrPwd )
+        if(loginResult){
+          
+          RV$Usr <- input$usrID
+          RV$Authenticated <- T
+         
+          removeModal()
+          
+        }else{
+          showModal(Login(failed = TRUE))
+        }
+        
+      } else {
+        showModal(Login(failed = TRUE))
+      }
+    })
+    
+    
+    
+    
+    
     
     
 ################  update the pick lists  ##########################    
     observe({
+      req( RV$Authenticated)
+      print( RV$Authenticated)
+      if( RV$Authenticated){
         RV$availableStations <- getStationsList()
         updateSelectInput(session, "pickStation", choices =  RV$availableStations)
+      }
     })
     
     observe({
@@ -64,7 +142,7 @@ server <- function(input, output, session) {
     })
     
     observe({
-      print('Datastream')
+
         req(input$pickStation, input$pickPlatform)
         RV$availableDataStreams <- getDataStreamList(input$pickStation, input$pickPlatform)
         updateSelectInput(session, "pickDataStream",choices =  RV$availableDataStreams)
