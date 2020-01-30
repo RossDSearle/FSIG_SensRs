@@ -10,7 +10,7 @@ source('appFunctions.R')
 
 ui <- fluidPage(
 
-    headerPanel(fluidPage(HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; FSIG Sensor Network"))),
+    headerPanel(fluidPage(HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; Townsville Field Support and Instrumentation Group Sensor Network"))),
 
     sidebarLayout(
         sidebarPanel(width = 3,
