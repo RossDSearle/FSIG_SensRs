@@ -35,7 +35,7 @@ ui <- fluidPage(
               ),
                 dateRangeInput('dateRange',
                                label = 'Date range input: yyyy-mm-dd',
-                               start = as.Date(defaultStartDate), end = Sys.Date()),
+                               start = Sys.Date()-numDaysToRetrieve, end = Sys.Date()),
               HTML('<br><br>'),
                 actionButton("buttonGetData", "Get Data"), HTML('<br><br>'),
                 downloadLink('downloadData', 'Download Data')
@@ -68,7 +68,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
-    RV$Authenticated <- T
+    #RV$Authenticated <- T
 
     #### Login to system   #########################
     
