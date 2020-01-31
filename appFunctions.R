@@ -67,8 +67,12 @@ getDataStreamList <- function(stationID, platformID){
   d <- dbGetQuery(conn, sql)
 
   dbDisconnect(conn)
-  datastreamList<- as.list(d$dbColumnName)
-  names(datastreamList) <- d$lnColumnName
+  
+  rows_to_keep = which(!d$dbColumnName %in% c('RecNum', 'TmStamp'))
+  d2 <- d[rows_to_keep,]
+  
+  datastreamList<- as.list(d2$dbColumnName)
+  names(datastreamList) <- d2$lnColumnName
   
   return(datastreamList[-c(1, 2)])
 }
