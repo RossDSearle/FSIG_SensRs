@@ -92,8 +92,13 @@ getDataStreamValues <- function(stationID, platformID, dataStreamID, startDate, 
   
   if(nrow(res) != 0){
   d <- as.POSIXct(str_trim(res[,1]) , format = "%Y-%m-%d %H:%M:%S")
-  ts <- xts(x=res[,2], unique = FALSE, order.by=d, tzone =  Sys.getenv("TZ"))
+  #ts <- xts(x=res[,2], unique = FALSE, order.by=d, tzone =  Sys.getenv("TZ"))
+  ts <- xts(x=res[,2], unique = FALSE, order.by=d)
   names(ts) <- c(colName)
+  
+  #indexTZ(ts)<- Sys.timezone()
+  indexTZ(ts)<- "Australia/Brisbane"
+
   return(ts)
   }else{
     return(NULL)

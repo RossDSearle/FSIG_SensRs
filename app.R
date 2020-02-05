@@ -58,7 +58,7 @@ ui <- fluidPage(
           tabsetPanel(
             tabPanel("Chart", 
                         htmlOutput("errMsgBox", inline = T),
-                        dygraphOutput("sensorChart1", width = "850", height = "500px")
+                        dygraphOutput("sensorChart1", width = "850", height = "500px") 
             ), tabPanel("Table",
                         rHandsontableOutput("dataStreamTable"))
           )
@@ -80,7 +80,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
-   # RV$Authenticated <- T
+    RV$Authenticated <- F
 
     #### Login to system   #########################
     
@@ -200,7 +200,6 @@ server <- function(input, output, session) {
           df <- getDataStreamValues(stn, platF, fld, input$dateRange[1], input$dateRange[2])
           #print(str[ts])
           tss[[i]] <- df
-
         }
         
         noNulltss <- compact(tss)
@@ -217,6 +216,9 @@ server <- function(input, output, session) {
                RV$currentTS <- NULL
                RV$error <- 'No data available in the specified date range'
            }
+        
+        #print(indexTZ(tss))
+        #print(str(RV$currentTS))
         })
     })
     
@@ -226,13 +228,17 @@ server <- function(input, output, session) {
         
         if(!is.null(RV$currentTS)){
             
+          
             isolate({
-                maxVal <- max(RV$currentTS)
+               # maxVal <- max(RV$currentTS)
+              
+              print(indexTZ(RV$currentTS))
+              
                 dygraph(RV$currentTS ,  main = "")%>%
                     #dyAxis("y", label = RV$currentSiteInfo$DataType, valueRange = c(0, maxVal)) %>%
-                    dyAxis("y", label = RV$currentSiteInfo$DataType) %>%
+                   # dyAxis("y", label = RV$currentSiteInfo$DataType) %>%
                     dyLegend(labelsSeparateLines = T) %>%
-                    dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26) %>%
+                    dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26, useDataTimezone=T) %>%
                     dyRangeSelector()
             })
         }
