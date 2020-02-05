@@ -74,7 +74,7 @@ getDataStreamList <- function(stationID, platformID){
   datastreamList<- as.list(d2$dbColumnName)
   names(datastreamList) <- d2$lnColumnName
   
-  return(datastreamList[-c(1, 2)])
+  return(datastreamList)
 }
 
 getDataStreamValues <- function(stationID, platformID, dataStreamID, startDate, endDate){
@@ -91,13 +91,13 @@ getDataStreamValues <- function(stationID, platformID, dataStreamID, startDate, 
   
   
   if(nrow(res) != 0){
-  d <- as.POSIXct(str_trim(res[,1]) , format = "%Y-%m-%d %H:%M:%S")
+  d <- as.POSIXct(str_trim(res[,1]) , format = "%Y-%m-%d %H:%M:%S", tz=defaultTimeZone)
   #ts <- xts(x=res[,2], unique = FALSE, order.by=d, tzone =  Sys.getenv("TZ"))
-  ts <- xts(x=res[,2], unique = FALSE, order.by=d)
+  ts <- xts(x=res[,2], unique = FALSE, order.by=d,  tz=defaultTimeZone)
   names(ts) <- c(colName)
   
   #indexTZ(ts)<- Sys.timezone()
-  indexTZ(ts)<- "Australia/Brisbane"
+  #indexTZ(ts)<- "Australia/Brisbane"
 
   return(ts)
   }else{

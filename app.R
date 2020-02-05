@@ -80,7 +80,7 @@ server <- function(input, output, session) {
     RV$Authenticated <- F
     RV$Usr <- NULL
  
-    RV$Authenticated <- F
+    RV$Authenticated <- T
 
     #### Login to system   #########################
     
@@ -238,7 +238,7 @@ server <- function(input, output, session) {
                     #dyAxis("y", label = RV$currentSiteInfo$DataType, valueRange = c(0, maxVal)) %>%
                    # dyAxis("y", label = RV$currentSiteInfo$DataType) %>%
                     dyLegend(labelsSeparateLines = T) %>%
-                    dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26, useDataTimezone=T) %>%
+                    dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26) %>%
                     dyRangeSelector()
             })
         }
