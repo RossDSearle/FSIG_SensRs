@@ -14,14 +14,9 @@ ui <- fluidPage(
 
   
   tags$head(
-    ### icon for web server version
-    #tags$link( rel="icon", type="image/png", href="layers.png", sizes="32x32" ),
-    ### icon for standalone version
-    # tags$link( rel="icon", type="image/png", href="http://localhost:1984/layers.png", sizes="32x32" ),
-    # tags$head(tags$script(src = "message-handler.js")),
-    tags$title("FSIG")
-    #HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; Townsville Field Support and Instrumentation Group Sensor Network")
     
+    tags$title("FSIG")
+   
   ),
     headerPanel(HTML("<img src=logos/CSIRO.gif style='vertical-align: top;'>&nbsp;&nbsp; Townsville Field Support and Instrumentation Group Sensor Network")),
 
@@ -32,19 +27,21 @@ ui <- fluidPage(
               fluidRow( column(1, actionLink("show", "Login"))), 
               fluidRow( column(1, htmlOutput("loginStatus"), HTML('<br>'))),
                 selectInput("pickStation", "Station Name", choices=NULL),
-                selectInput("pickPlatform", "Platform", choices=NULL),
-               # selectInput("pickDataStream", "Data Stream", choices=NULL, multiple=T),
-              pickerInput(
-                inputId = "pickDataStream", 
-                label = "Data Stream/s", 
-                choices = NULL, 
-                options = list(
-                  `actions-box` = TRUE, 
-                  size = 8,
-                  `selected-text-format` = "count > 3"
-                ), 
-                multiple = TRUE
-              ),
+                selectInput("pickPlatform", "Platform", choices =  NULL),
+              # pickerInput(
+              #   inputId = "pickDataStream",
+              #   label = "Data Stream/s",
+              #   choices = NULL,
+              #   options = list(
+              #     `actions-box` = TRUE,
+              #     size = 8,
+              #     `selected-text-format` = "count > 3"
+              #   ),
+              #   multiple = TRUE
+              # ),
+               
+              selectizeInput(inputId="pickDataStream", label="Data Streams", choices = NULL, multiple = TRUE),
+              
                 dateRangeInput('dateRange',
                                label = 'Date range input: yyyy-mm-dd',
                                start = Sys.Date()-numDaysToRetrieve, end = Sys.Date()),
@@ -174,7 +171,9 @@ server <- function(input, output, session) {
 
         req(input$pickStation, input$pickPlatform)
         RV$availableDataStreams <- getDataStreamList(input$pickStation, input$pickPlatform)
-        updateSelectInput(session, "pickDataStream",choices =  RV$availableDataStreams)
+        print( RV$availableDataStreams)
+        #updateSelectInput(session, "pickDataStream",choices =  RV$availableDataStreams)
+        updateSelectizeInput(session, inputId='pickDataStream', choices=names(RV$availableDataStreams))
     })
     
    
@@ -190,24 +189,18 @@ server <- function(input, output, session) {
         stn <- input$pickStation
         platF <- input$pickPlatform 
 
-
         tss <- vector("list", length(input$pickDataStream) )
         
         for (i in 1:length(input$pickDataStream)) {
-          #print(i)
+
           fld <- input$pickDataStream[i]
           print(fld)
           df <- getDataStreamValues(stn, platF, fld, input$dateRange[1], input$dateRange[2])
-          #print(str[ts])
           tss[[i]] <- df
         }
         
         noNulltss <- compact(tss)
-       
-        #print(head(allTs))
 
-        
-           # ts <- getDataStreamValues(stn, platF, input$pickDataStream, input$dateRange[1], input$dateRange[2])
            if(length(noNulltss) > 0){
              allTs <- do.call(merge, noNulltss)
                RV$currentTS <- allTs
@@ -216,9 +209,6 @@ server <- function(input, output, session) {
                RV$currentTS <- NULL
                RV$error <- 'No data available in the specified date range'
            }
-        
-        #print(indexTZ(tss))
-        #print(str(RV$currentTS))
         })
     })
     
@@ -227,17 +217,9 @@ server <- function(input, output, session) {
     output$sensorChart1 <- renderDygraph({
         
         if(!is.null(RV$currentTS)){
-            
-          
             isolate({
-               # maxVal <- max(RV$currentTS)
-              
-              print(indexTZ(RV$currentTS))
-              
                 dygraph(RV$currentTS ,  main = "")%>%
-                    #dyAxis("y", label = RV$currentSiteInfo$DataType, valueRange = c(0, maxVal)) %>%
-                   # dyAxis("y", label = RV$currentSiteInfo$DataType) %>%
-                    dyLegend(labelsSeparateLines = T) %>%
+                 dyLegend(labelsSeparateLines = T) %>%
                     dyOptions(axisLineWidth = 1.5, fillGraph = F, drawGrid = T, titleHeight = 26) %>%
                     dyRangeSelector()
             })
@@ -267,7 +249,7 @@ server <- function(input, output, session) {
     
     output$downloadData <- downloadHandler(
         filename = function() {
-         # colName <- getColumnNamefromIDs(input$pickStation,input$pickPlatform,input$pickDataStream)
+
           tabName <- getTableNamefromIDs(input$pickStation,input$pickPlatform)
           stationName <- getStationNamefromIDs(input$pickStation)
           colnames <- paste0(input$pickDataStream, collapse = "_")

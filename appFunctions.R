@@ -63,7 +63,7 @@ getDataStreamList <- function(stationID, platformID){
   conn <- getCon()
   sql <- paste0("SELECT columnID, LNDBStationMeta_stationID, LNDBTableMeta_tableID, lnColumnName, dbColumnName, process, units FROM LNDBColumnMeta 
                 where LNDBStationMeta_stationID = ", stationID, ' and LNDBTableMeta_tableID = ', platformID , " order by lnColumnName")
-
+  
   d <- dbGetQuery(conn, sql)
 
   dbDisconnect(conn)
@@ -73,7 +73,7 @@ getDataStreamList <- function(stationID, platformID){
   
   datastreamList<- as.list(d2$dbColumnName)
   names(datastreamList) <- d2$lnColumnName
-  
+ 
   return(datastreamList)
 }
 
